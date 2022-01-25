@@ -18,7 +18,7 @@ ArrayDict = ty.Dict[str, np.ndarray]
 
 
 def normalize(
-    X: ArrayDict, normalization: str, seed: int, noise: float = 1e-3
+        X: ArrayDict, normalization: str, seed: int, normalizer_path: str, noise: float = 1e-3
 ) -> ArrayDict:
     X_train = X['train'].copy()
     if normalization == 'standard':
@@ -39,6 +39,8 @@ def normalize(
     else:
         util.raise_unknown('normalization', normalization)
     normalizer.fit(X_train)
+    if normalizer_path:
+        dump(normalizer, open(normalizer_path, 'wb'))
     return {k: normalizer.transform(v) for k, v in X.items()}  # type: ignore[code]
 
 
@@ -113,6 +115,18 @@ class Dataset:
             if self.folder
             else None
         )
+        normalizer_path = (
+            self.folder
+            / f'normalizer_X__{normalization}__{num_nan_policy}__{cat_nan_policy}__{cat_policy}__{seed}.pickle'
+            if self.folder
+            else None
+        )
+        encoder_path = (
+            self.folder
+            / f'encoder_X__{normalization}__{num_nan_policy}__{cat_nan_policy}__{cat_policy}__{seed}.pickle'
+            if self.folder
+            else None
+        )
         if cache_path and cat_min_frequency:
             cache_path = cache_path.with_name(
                 cache_path.name.replace('.pickle', f'__{cat_min_frequency}.pickle')
@@ -134,13 +148,15 @@ class Dataset:
             if any(x.any() for x in num_nan_masks.values()):  # type: ignore[code]
                 if num_nan_policy == 'mean':
                     num_new_values = np.nanmean(self.N['train'], axis=0)
+                    if self.folder:
+                        np.save(self.folder / / f'num_new_values.npy', num_new_values)
                 else:
                     util.raise_unknown('numerical NaN policy', num_nan_policy)
                 for k, v in N.items():
                     num_nan_indices = np.where(num_nan_masks[k])
                     v[num_nan_indices] = np.take(num_new_values, num_nan_indices[1])
             if normalization:
-                N = normalize(N, normalization, seed)
+                N = normalize(N, normalization, seed, normalizer_path)
 
         else:
             N = None
@@ -193,8 +209,12 @@ class Dataset:
             unknown_value=unknown_value,  # type: ignore[code]
             dtype='int64',  # type: ignore[code]
         ).fit(C['train'])
+        if encoder_path:
+            dump(encoder, open(encoder_path, 'wb'))
         C = {k: encoder.transform(v) for k, v in C.items()}
         max_values = C['train'].max(axis=0)
+        if self.folder:
+            np.save(self.folder /  f'max_values.npy', max_value)
         for part in ['val', 'test']:
             for column_idx in range(C[part].shape[1]):
                 C[part][C[part][:, column_idx] == unknown_value, column_idx] = (
@@ -218,7 +238,7 @@ class Dataset:
             if not isinstance(C['train'], np.ndarray):
                 C = {k: v.values for k, v in C.items()}  # type: ignore[code]
             if normalization:
-                C = normalize(C, normalization, seed, inplace=True)  # type: ignore[code]
+                C = normalize(C, normalization, seed, normalizer_path, inplace=True)  # type: ignore[code]
             result = C if N is None else {x: np.hstack((N[x], C[x])) for x in N}
         else:
             util.raise_unknown('categorical policy', cat_policy)
@@ -237,6 +257,9 @@ class Dataset:
                 info = None
             elif policy == 'mean_std':
                 mean, std = self.y['train'].mean(), self.y['train'].std()
+                if self.folder:
+                    y_mean_std = [mean, std]
+                    np.save(self.folder /  f'y_mean_std.npy', y_mean_std)
                 y = {k: (v - mean) / std for k, v in y.items()}
                 info = {'policy': policy, 'mean': mean, 'std': std}
             else:
