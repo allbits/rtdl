@@ -348,6 +348,9 @@ if __name__ == "__main__":
     if not D.is_multiclass:
         Y_device = {k: v.float() for k, v in Y_device.items()}
 
+    np.save(dataset_dir / f'categories.npy', lib.get_categories(X_cat))
+    print(f'Saved {lib.get_categories(X_cat)}')
+
     train_size = D.size(lib.TRAIN)
     batch_size = args['training']['batch_size']
     epoch_size = stats['epoch_size'] = math.ceil(train_size / batch_size)

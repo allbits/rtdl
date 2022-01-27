@@ -40,7 +40,7 @@ def normalize(
         util.raise_unknown('normalization', normalization)
     normalizer.fit(X_train)
     if normalizer_path:
-        dump(normalizer, open(normalizer_path, 'wb'))
+        pickle.dump(normalizer, open(normalizer_path, 'wb'))
     return {k: normalizer.transform(v) for k, v in X.items()}  # type: ignore[code]
 
 
@@ -149,7 +149,7 @@ class Dataset:
                 if num_nan_policy == 'mean':
                     num_new_values = np.nanmean(self.N['train'], axis=0)
                     if self.folder:
-                        np.save(self.folder / / f'num_new_values.npy', num_new_values)
+                        np.save(self.folder / f'num_new_values.npy', num_new_values)
                 else:
                     util.raise_unknown('numerical NaN policy', num_nan_policy)
                 for k, v in N.items():
@@ -210,11 +210,11 @@ class Dataset:
             dtype='int64',  # type: ignore[code]
         ).fit(C['train'])
         if encoder_path:
-            dump(encoder, open(encoder_path, 'wb'))
+            pickle.dump(encoder, open(encoder_path, 'wb'))
         C = {k: encoder.transform(v) for k, v in C.items()}
         max_values = C['train'].max(axis=0)
         if self.folder:
-            np.save(self.folder /  f'max_values.npy', max_value)
+            np.save(self.folder /  f'max_values.npy', max_values)
         for part in ['val', 'test']:
             for column_idx in range(C[part].shape[1]):
                 C[part][C[part][:, column_idx] == unknown_value, column_idx] = (

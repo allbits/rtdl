@@ -1,6 +1,13 @@
 # %%
-from . import ft_transformer
+import sys
+
+import pickle
+import numpy as np
+import zero
+
 import lib
+from ft_transformer import *
+
 
 # %%
 if __name__ == "__main__":
@@ -10,50 +17,61 @@ if __name__ == "__main__":
     args['model'].setdefault('token_bias', True)
     args['model'].setdefault('kv_compression', None)
     args['model'].setdefault('kv_compression_sharing', None)
-    zero.set_randomness(args['seed'])
+
+    seed=args['seed']
+    zero.set_randomness(seed)
 
     ## (2) load the transformation data
     ## https://machinelearningmastery.com/how-to-save-and-load-models-and-data-preparation-in-scikit-learn-for-later-use/
     ## somewhere in the original code: dump(normalizer, open('normalizer.pkl', 'wb'))
     print('Loading normalization data...')
     dataset_dir = lib.get_path(args['data']['path'])
-    normalization=args['data'].get('normalization'),
-    num_nan_policy='mean',
-    cat_nan_policy='new',
-    cat_policy=args['data'].get('cat_policy', 'indices'),
+    normalization=args['data'].get('normalization')
+    num_nan_policy='mean'
+    cat_nan_policy='new'
+    cat_policy=args['data'].get('cat_policy', 'indices')
+    cat_min_frequency=args['data'].get('cat_min_frequency', 0.0)
+    ## tbd: modify paths for non-zero cat_min_frequency
     normalizer_path = dataset_dir / f'normalizer_X__{normalization}__{num_nan_policy}__{cat_nan_policy}__{cat_policy}__{seed}.pickle'
     encoder_path = dataset_dir / f'encoder_X__{normalization}__{num_nan_policy}__{cat_nan_policy}__{cat_policy}__{seed}.pickle'
 
+
+    ### (TBD: some of these files may not exists; e.g. num_new_values exists only if the training DS contains nans)
     ## num_new_values
     num_new_values = np.load(dataset_dir / f'num_new_values.npy')
-    normalizer = load(open(normalizer_path, 'rb'))
-    encoder = load(open(encoder_path, 'rb'))
+    normalizer = pickle.load(open(normalizer_path, 'rb'))
+    encoder = pickle.load(open(encoder_path, 'rb'))
     ## max_values
     max_values = np.load(dataset_dir / f'max_values.npy')
     ## y_std, y_mean
     y_mean_std = np.load(dataset_dir / f'y_mean_std.npy')
-
+    ## cat values
+    cat_values = np.load(dataset_dir / f'categories.npy')
+    print(f'I have {cat_values}')
+    
     ## (3) test data
-    x_num=[1.83, 7.87, 0.69, 36.0, nan, nan, nan, 6.0 ]
+    x_num=[1.83, 7.87, 0.69, 36.0, np.nan, np.nan, np.nan, 6.0 ]
     x_cat=['129', 'as', '2', '1']
 
     ## (3) load the model (and possibly move it to the GPU)
     print('\nLoading model...')
+    device = lib.get_device()
     model = Transformer(
-        d_numerical=x_num.shape[0]
-        categories=lib.get_categories(X_cat), # XXX
+        d_numerical=len(x_num),
+        categories=cat_values,
         d_out=1, ## regression hardcoded
         **args['model'],
     ).to(device)
     if torch.cuda.device_count() > 1:  # type: ignore[code]
         print('Using nn.DataParallel')
         model = nn.DataParallel(model)
+    checkpoint_path = output / 'checkpoint.pt'
     model.load_state_dict(torch.load(checkpoint_path)['model'])
+    sys.exit()
 
     ## (4) exemplary call, second test entry
     print('\nTest evaluation...')
 
-    device = lib.get_device()
     if device.type != 'cpu':
         x_num = x_num.to(device)
         x_cat = x_cat.to(device)

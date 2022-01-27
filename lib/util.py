@@ -65,6 +65,7 @@ def load_config(
     parser.add_argument('-o', '--output', metavar='DIR')
     parser.add_argument('-f', '--force', action='store_true')
     parser.add_argument('--continue', action='store_true', dest='continue_')
+    parser.add_argument('--evaluate', action='store_true', dest='evaluate_')
     if argv is None:
         argv = sys.argv[1:]
     args = parser.parse_args(argv)
@@ -84,6 +85,9 @@ def load_config(
 
     assert config_path.exists()
     config = load_toml(config_path)
+
+    if args.evaluate_:
+        return config, output_dir
 
     if output_dir.exists():
         if args.force:
