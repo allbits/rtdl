@@ -416,6 +416,7 @@ if __name__ == "__main__":
         )
 
     def apply_model(part, idx):
+        print(X_num[part][idx].type())
         return model(
             None if X_num is None else X_num[part][idx],
             None if X_cat is None else X_cat[part][idx],

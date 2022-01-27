@@ -27,23 +27,23 @@ if __name__ == "__main__":
 
         ## (4.1.2) normalize
         x_num = normalizer.transform(x_num)
-        x_num = torch.as_tensor(x_num)
+        x_num = torch.as_tensor(x_num, dtype=torch.float)
 
         ## (4.2) transform categorical data
         ## (4.2.1) replace nan
-        cat_nan_mask = [c == 'nan' for c in x_cat]
-        print(cat_nan_mask)
-        
+        x_cat = np.array(x_cat).reshape(1,-1)
+        cat_nan_mask = x_cat == 'nan'
         if cat_nan_mask.any():
             cat_nan_indices = np.where(cat_nan_mask)
             x_cat[cat_nan_indices] = '___null___'
 
         ## (4.2.2) encode; fix values, since new data may be out of cat range
+        unknown_value = encoder.get_params()['unknown_value']
         x_cat = encoder.transform(x_cat)
-        for i in range(x_cat.shape[0]):
-            if x_cat[i]==unknown_value:
-                x_cat[i]=max_value[i]+1
-        x_cat = torch.as_tensor(x_cat)
+        for column_idx in range(x_cat.shape[1]):
+            x_cat[x_cat[:,column_idx]==unknown_value,column_idx] = ( max_values[column_idx]+1 )
+        print(type(x_cat))
+        x_cat = torch.as_tensor(x_cat, dtype=torch.long)
 
         ## (4.3) evaluate
         if device.type != 'cpu':
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     y_mean_std = np.load(dataset_dir / f'y_mean_std.npy')
     ## cat values
     cat_values = np.load(dataset_dir / f'categories.npy').tolist()
-    
+
     ## (3) test data
     x_num=np.array([1.83, 7.87, 0.69, 36.0, np.nan, np.nan, np.nan, 6.0 ]).reshape(1, -1)
     x_cat=['129', 'as', '2', '1']
@@ -113,7 +113,5 @@ if __name__ == "__main__":
     print('\nTest evaluation...')
 
     y=predict(x_num, x_cat, num_new_values, max_values, normalizer, encoder, y_mean_std, device)
-    sys.exit()
 
     print(y)
-
