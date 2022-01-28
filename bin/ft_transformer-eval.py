@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
         ## (4.2) transform categorical data
         ## (4.2.1) replace nan
-        x_cat = np.array(x_cat).reshape(1,-1)
+        x_cat = np.array(x_cat,dtype='<U32').reshape(1,-1)
         cat_nan_mask = x_cat == 'nan'
         if cat_nan_mask.any():
             cat_nan_indices = np.where(cat_nan_mask)
@@ -40,9 +40,10 @@ if __name__ == "__main__":
         ## (4.2.2) encode; fix values, since new data may be out of cat range
         unknown_value = encoder.get_params()['unknown_value']
         x_cat = encoder.transform(x_cat)
+
+        ## this won't work, since the transformer can't handle max_values[column_idx]+1; make sure that train contains nan's if they're present
         for column_idx in range(x_cat.shape[1]):
             x_cat[x_cat[:,column_idx]==unknown_value,column_idx] = ( max_values[column_idx]+1 )
-        print(type(x_cat))
         x_cat = torch.as_tensor(x_cat, dtype=torch.long)
 
         ## (4.3) evaluate
@@ -92,7 +93,7 @@ if __name__ == "__main__":
 
     ## (3) test data
     x_num=np.array([1.83, 7.87, 0.69, 36.0, np.nan, np.nan, np.nan, 6.0 ]).reshape(1, -1)
-    x_cat=['129', 'as', '2', '1']
+    x_cat=['129', 'as', '2', 'nan' ]
 
     ## (3) load the model (and possibly move it to the GPU)
     print('\nLoading model...')

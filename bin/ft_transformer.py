@@ -348,6 +348,9 @@ if __name__ == "__main__":
     if not D.is_multiclass:
         Y_device = {k: v.float() for k, v in Y_device.items()}
 
+    for i in range(X_cat['train'].shape[1]):
+        print(set(X_cat['train'][:, i].cpu().tolist()))
+    print(lib.get_categories(X_cat))
     np.save(dataset_dir / f'categories.npy', lib.get_categories(X_cat))
     print(f'Saved {lib.get_categories(X_cat)}')
 
@@ -416,7 +419,6 @@ if __name__ == "__main__":
         )
 
     def apply_model(part, idx):
-        print(X_num[part][idx].type())
         return model(
             None if X_num is None else X_num[part][idx],
             None if X_cat is None else X_cat[part][idx],
