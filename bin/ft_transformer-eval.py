@@ -65,8 +65,7 @@ if __name__ == "__main__":
     zero.set_randomness(seed)
 
     ## (2) load the transformation data
-    ## https://machinelearningmastery.com/how-to-save-and-load-models-and-data-preparation-in-scikit-learn-for-later-use/
-    ## somewhere in the original code: dump(normalizer, open('normalizer.pkl', 'wb'))
+    ## https://machinelearningmastery.com/how-to-save-and-load-models-and-data-preparation-in-scikit-learn-for-later-use
     print('Loading normalization data...')
     dataset_dir = lib.get_path(args['data']['path'])
     normalization=args['data'].get('normalization')
@@ -78,20 +77,16 @@ if __name__ == "__main__":
     normalizer_path = dataset_dir / f'normalizer_X__{normalization}__{num_nan_policy}__{cat_nan_policy}__{cat_policy}__{seed}.pickle'
     encoder_path = dataset_dir / f'encoder_X__{normalization}__{num_nan_policy}__{cat_nan_policy}__{cat_policy}__{seed}.pickle'
 
-
-    ### (TBD: some of these files may not exists; e.g. num_new_values exists only if the training DS contains nans)
-    ## num_new_values
+    ### (TBD: some of these files may not exist; e.g. num_new_values exists only if the training DS contains nans)
     num_new_values = np.load(dataset_dir / f'num_new_values.npy')
     normalizer = pickle.load(open(normalizer_path, 'rb'))
     encoder = pickle.load(open(encoder_path, 'rb'))
-    ## max_values
     max_values = np.load(dataset_dir / f'max_values.npy')
-    ## y_std, y_mean
+    ## y_mean, y_std
     y_mean_std = np.load(dataset_dir / f'y_mean_std.npy')
-    ## cat values
     cat_values = np.load(dataset_dir / f'categories.npy').tolist()
 
-    ## (3) test data
+    ## (3) example test data
     x_num=np.array([1.83, 7.87, 0.69, 36.0, np.nan, np.nan, np.nan, 6.0 ]).reshape(1, -1)
     x_cat=['129', 'as', '2', 'nan' ]
 
@@ -110,9 +105,7 @@ if __name__ == "__main__":
     checkpoint_path = output / 'checkpoint.pt'
     model.load_state_dict(torch.load(checkpoint_path)['model'])
 
-    ## (4) exemplary call, second test entry
+    ## (4) exemplary call
     print('\nTest evaluation...')
-
     y=predict(x_num, x_cat, num_new_values, max_values, normalizer, encoder, y_mean_std, device)
-
     print(y)
