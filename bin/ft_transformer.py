@@ -348,11 +348,7 @@ if __name__ == "__main__":
     if not D.is_multiclass:
         Y_device = {k: v.float() for k, v in Y_device.items()}
 
-    for i in range(X_cat['train'].shape[1]):
-        print(set(X_cat['train'][:, i].cpu().tolist()))
-    print(lib.get_categories(X_cat))
     np.save(dataset_dir / f'categories.npy', lib.get_categories(X_cat))
-    print(f'Saved {lib.get_categories(X_cat)}')
 
     train_size = D.size(lib.TRAIN)
     batch_size = args['training']['batch_size']
