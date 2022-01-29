@@ -1,6 +1,6 @@
 # %%
 import sys
-
+import os
 import pickle
 import numpy as np
 import zero
@@ -78,7 +78,10 @@ if __name__ == "__main__":
     encoder_path = dataset_dir / f'encoder_X__{normalization}__{num_nan_policy}__{cat_nan_policy}__{cat_policy}__{seed}.pickle'
 
     ### (TBD: some of these files may not exist; e.g. num_new_values exists only if the training DS contains nans)
-    num_new_values = np.load(dataset_dir / f'num_new_values.npy')
+    if os.path.exists(dataset_dir / f'num_new_values.npy'):
+        num_new_values = np.load(dataset_dir / f'num_new_values.npy')
+    else:
+        num_new_values = np.zeros(10)
     normalizer = pickle.load(open(normalizer_path, 'rb'))
     encoder = pickle.load(open(encoder_path, 'rb'))
     max_values = np.load(dataset_dir / f'max_values.npy')
@@ -86,11 +89,17 @@ if __name__ == "__main__":
     y_mean_std = np.load(dataset_dir / f'y_mean_std.npy')
     cat_values = np.load(dataset_dir / f'categories.npy').tolist()
 
-    ## (3) example test data
-    x_num=np.array([1.83, 7.87, 0.69, 36.0, np.nan, np.nan, np.nan, 6.0 ]).reshape(1, -1)
+    ## (3a) example test data for ACOTSP
+    x_num=[1.83, 7.87, 0.69, 36.0, np.nan, np.nan, np.nan, 6.0 ]
     x_cat=['129', 'as', '2', 'nan' ]
 
-    ## (3) load the model (and possibly move it to the GPU)
+    ## (3b) example test data for LKH
+    x_num=[255.0, 0.0, 5.0, 5.0, 4.0, 3.0, 12.0, 14.0, 20.0, 5.0, 986.0, 5.0]
+    x_cat=['121', 'NO', 'QUADRANT', 'QUADRANT', 'YES', 'YES', 'GREEDY', 'NO', 'NO', 'YES']
+
+    x_num=np.array(x_num).reshape(1,-1)
+
+    ## (4) load the model (and possibly move it to the GPU)
     print('\nLoading model...')
     device = lib.get_device()
     model = Transformer(
@@ -105,7 +114,7 @@ if __name__ == "__main__":
     checkpoint_path = output / 'checkpoint.pt'
     model.load_state_dict(torch.load(checkpoint_path)['model'])
 
-    ## (4) exemplary call
+    ## (5) exemplary call
     print('\nTest evaluation...')
     y=predict(x_num, x_cat, num_new_values, max_values, normalizer, encoder, y_mean_std, device)
     print(y)
