@@ -40,6 +40,12 @@ class Normalization:
         self.y_mean_std = np.load(dataset_dir / f'y_mean_std.npy')
         self.cat_values = np.load(dataset_dir / f'categories.npy').tolist()
 
+        dataset_dir = lib.get_path(args['data']['path'])
+        self.dataset_info = lib.load_json(dataset_dir / 'info.json')
+
+        self.n_num_features = self.dataset_info['n_num_features']
+        self.n_cat_features = self.dataset_info['n_cat_features']
+
     def normalize_x(self,x_num,x_cat):
         ## (4.1) transform numerical data
         ## (4.1.1) replace nan by mean
@@ -72,3 +78,15 @@ class Normalization:
 
     def normalize_y(self,y_raw):
         return (y_raw*self.y_mean_std[1])+self.y_mean_std[0]
+
+    def get_example_data(self):
+        if self.n_num_features == 8:
+            print("Assuming ACOTSP dataset.")
+            x_num=[1.83, 7.87, 0.69, 36.0, np.nan, np.nan, np.nan, 6.0 ]
+            x_cat=['129', 'as', '2', 'nan' ]
+        else:
+            print("Assuming LKH dataset.")
+            x_num=[255.0, 0.0, 5.0, 5.0, 4.0, 3.0, 12.0, 14.0, 20.0, 5.0, 986.0, 5.0]
+            x_cat=['121', 'NO', 'QUADRANT', 'QUADRANT', 'YES', 'YES', 'GREEDY', 'NO', 'NO', 'YES']
+        x_num=np.array(x_num).reshape(1,-1)
+        return x_num,x_cat
