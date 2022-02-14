@@ -131,6 +131,12 @@ class Dataset:
             cache_path = cache_path.with_name(
                 cache_path.name.replace('.pickle', f'__{cat_min_frequency}.pickle')
             )
+            normalizer_path = normalizer_path.with_name(
+                normalizer_path.name.replace('.pickle', f'__{cat_min_frequency}.pickle')
+            )
+            encoder_path = encoder_path.with_name(
+                encoder_path.name.replace('.pickle', f'__{cat_min_frequency}.pickle')
+            )
         if cache_path and cache_path.exists():
             print(f'Using cached X: {cache_path}')
             with open(cache_path, 'rb') as f:
