@@ -14,6 +14,8 @@ class Normalization:
     def __init__(self,args,seed):
         print('Loading normalization data...')
         dataset_dir = lib.get_path(args['data']['path'])
+        self.dataset_info = lib.load_json(dataset_dir / 'info.json')
+
         normalization=args['data'].get('normalization')
         num_nan_policy='mean'
         cat_nan_policy='new'
@@ -32,16 +34,13 @@ class Normalization:
         if os.path.exists(dataset_dir / f'num_new_values.npy'):
             self.num_new_values = np.load(dataset_dir / f'num_new_values.npy')
         else:
-            self.num_new_values = np.zeros(dataset_info['n_num_features'])
+            self.num_new_values = np.zeros(self.dataset_info['n_num_features'])
         self.normalizer = pickle.load(open(normalizer_path, 'rb'))
         self.encoder = pickle.load(open(encoder_path, 'rb'))
         self.max_values = np.load(dataset_dir / f'max_values.npy')
         ## y_mean, y_std
         self.y_mean_std = np.load(dataset_dir / f'y_mean_std.npy')
         self.cat_values = np.load(dataset_dir / f'categories.npy').tolist()
-
-        dataset_dir = lib.get_path(args['data']['path'])
-        self.dataset_info = lib.load_json(dataset_dir / 'info.json')
 
         self.n_num_features = self.dataset_info['n_num_features']
         self.n_cat_features = self.dataset_info['n_cat_features']

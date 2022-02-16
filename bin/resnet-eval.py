@@ -10,9 +10,6 @@ if __name__ == "__main__":
     ## (1) load the configuration, general setup
     args, output = lib.load_config()
 
-    dataset_dir = lib.get_path(args['data']['path'])
-    dataset_info = lib.load_json(dataset_dir / 'info.json')
-
     seed=args['seed']
     zero.set_randomness(seed)
 
@@ -26,6 +23,7 @@ if __name__ == "__main__":
         d_out=1, ## regression hardcoded
         **args['model'],
     ).to(device)
+    model.eval()
     if torch.cuda.device_count() > 1:  # type: ignore[code]
         print('Using nn.DataParallel')
         model = nn.DataParallel(model)
